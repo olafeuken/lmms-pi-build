@@ -24,14 +24,27 @@ sudo apt-get install -y --no-install-recommends \
 [ -d "$SRC" ] || { git clone --depth 1 https://github.com/LMMS/lmms.git "$SRC"; }
 
 echo "=== konfiguracja (Cortex-A76 + OpenMP, bez LTO) ==="
+# TARGET_UARCH=custom + TARGET_UARCH_FLAGS: LMMS aplikuje te flagi przez
+# add_compile_options do WSZYSTKICH targetów (rdzeń + wtyczki + 3rdparty),
+# spójniej niż nadpisywanie CMAKE_C_FLAGS. official=armv8-a (zbyt zachowawcze),
+# native da kod Ampere na runnerze (nie A76).
 cmake -S "$SRC" -B build -G Ninja \
   -DCMAKE_BUILD_TYPE=Release \
-  -DTARGET_UARCH=none \
-  -DCMAKE_C_FLAGS="-O3 -mcpu=cortex-a76 -march=armv8.2-a+dotprod+crypto -fopenmp -pipe" \
-  -DCMAKE_CXX_FLAGS="-O3 -mcpu=cortex-a76 -march=armv8.2-a+dotprod+crypto -fopenmp -pipe" \
-  -DCMAKE_CXX_FLAGS_RELEASE="-DNDEBUG" \
-  -DWANT_QT6=ON -DWANT_VST=OFF \
-  -DWANT_ALSA=ON -DWANT_PULSEAUDIO=ON -DWANT_JACK=ON -DWANT_SNDFILE=ON -DWANT_SF2=ON \
+  -DTARGET_UARCH=custom \
+  -DTARGET_UARCH_FLAGS="-mcpu=cortex-a76 -march=armv8.2-a+dotprod+crypto -mtune=cortex-a76 -O3 -fopenmp -pipe" \
+  -DWANT_QT6=ON \
+  # Backendy audio - na Pi dźwięk daje PulseAudio (przez pipewire-pulse)
+  -DWANT_ALSA=ON -DWANT_PULSEAUDIO=ON -DWANT_JACK=ON \
+  -DWANT_SNDIO=ON -DWANT_PORTAUDIO=ON -DWANT_SOUNDIO=ON -DWANT_SDL=ON \
+  -DWANT_SNDFILE=ON -DWANT_SF2=ON -DWANT_OGGVORBIS=ON \
+  # Wyłącz ciężkie/opcjonalne podsystemy => lżejszy build (mniej linkowania,
+  # mniejsze ryzyko OOM na runnerze), szybszy start, mniej RAM na Pi:
+  # - LV2/SUIL: ~184 wtyczek systemowych skanowanych przy starcie (wolny start)
+  # - VST/GIG/Carla/Stk/Sid oraz pakiety LADSPA (CALF/CAPS/CMT/SWH/TAP)
+  -DWANT_LV2=OFF -DWANT_SUIL=OFF \
+  -DWANT_VST=OFF -DWANT_GIG=OFF -DWANT_CARLA=OFF -DWANT_STK=OFF -DWANT_SID=OFF \
+  -DWANT_CALF=OFF -DWANT_CAPS=OFF -DWANT_CMT=OFF -DWANT_SWH=OFF -DWANT_TAP=OFF \
+  -DWANT_MP3LAME=OFF \
   -DCMAKE_INSTALL_PREFIX=/opt/lmms
 
 echo "=== kompilacja (${NPROC} wątków) ==="
