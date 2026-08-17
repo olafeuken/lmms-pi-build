@@ -33,7 +33,7 @@ echo "=== konfiguracja (Cortex-A76 + OpenMP, bez LTO) ==="
 cmake -S "$SRC" -B build -G Ninja \
   -DCMAKE_BUILD_TYPE=Release \
   -DTARGET_UARCH=custom \
-  -DTARGET_UARCH_FLAGS="-mcpu=cortex-a76 -march=armv8.2-a+dotprod+crypto -mtune=cortex-a76 -O3 -fopenmp -pipe" \
+  -DTARGET_UARCH_FLAGS="-mcpu=cortex-a76;-march=armv8.2-a+dotprod+crypto;-mtune=cortex-a76;-O3;-fopenmp;-pipe" \
   -DWANT_QT6=ON \
   -DWANT_ALSA=ON -DWANT_PULSEAUDIO=ON -DWANT_JACK=ON \
   -DWANT_SNDIO=ON -DWANT_PORTAUDIO=ON -DWANT_SOUNDIO=ON -DWANT_SDL=ON \
